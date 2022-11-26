@@ -3,14 +3,12 @@ import "./App.css";
 import { MpSdk, setupSdk } from "@matterport/sdk";
 
 function App() {
-  //const [sdk, setSdk] = useState<MpSdk>({});
   const [sdk, setSdk] = useState();
   const [horizontal, setHorizontal] = useState(45);
   const [vertical, setVertical] = useState(15);
-  //const container = useRef<HTMLDivElement>(null);
   const container = useRef();
   let started = false;
-
+  const [isLoaded, setIsLoaded] = useState(false);
   useEffect(() => {
     if (!started && container.current) {
       started = true;
@@ -18,13 +16,47 @@ function App() {
         container: container.current,
         space: "V5hx2ktRhvH",
         iframeQueryParams: { qs: 1 },
-      }).then(setSdk);
+      })
+        .then(setSdk)
+        .then(setIsLoaded(false));
     }
   }, []);
+  useEffect(() => {
+    loaded().then(
+      sdk?.App.state.waitUntil((state) =>
+        state.phase == "appphase.playing"
+          ? AfterLoaded()
+          : console.log(state.phase)
+      )
+    );   
+  }, [sdk]);
+  const AfterLoaded=()=>
+  {
+    setIsLoaded(true);   
+  }  
+  useEffect(()=>{
+    //After finished load
+    if(isLoaded === true)
+    {
+      startSDKHere();
+    }
+  },[isLoaded]);
+
+  const startSDKHere=()=>{
+    sdk.Camera.rotate(100, 0);
+  }
+  
 
   const rotate = () => {
     sdk?.Camera.rotate(horizontal, vertical);
   };
+
+  async function loaded() {
+   
+    await sdk?.App.state.waitUntil(
+      (state) => state.phase === sdk.App.Phase.PLAYING
+    );
+  }
 
   return (
     <div className="app">
@@ -35,9 +67,7 @@ function App() {
           <span>Horizontal rotation</span>
           <input
             type="number"
-            onInput={(evt) =>
-              setHorizontal(parseFloat((evt.target).value))
-            }
+            onInput={(evt) => setHorizontal(parseFloat(evt.target.value))}
             value={horizontal}
           />
         </label>
@@ -45,9 +75,7 @@ function App() {
           <span>Vertical rotation</span>
           <input
             type="number"
-            onInput={(evt) =>
-              setVertical(parseFloat((evt.target).value))
-            }
+            onInput={(evt) => setVertical(parseFloat(evt.target.value))}
             value={vertical}
           />
         </label>
