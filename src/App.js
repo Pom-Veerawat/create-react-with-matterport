@@ -28,31 +28,51 @@ function App() {
           ? AfterLoaded()
           : console.log(state.phase)
       )
-    );   
+    );
   }, [sdk]);
-  const AfterLoaded=()=>
-  {
-    setIsLoaded(true);   
-  }  
-  useEffect(()=>{
+  const AfterLoaded = () => {
+    setIsLoaded(true);
+  };
+  useEffect(() => {
     //After finished load
-    if(isLoaded === true)
-    {
+    if (isLoaded === true) {
       startSDKHere();
     }
-  },[isLoaded]);
+  }, [isLoaded]);
 
-  const startSDKHere=()=>{
+  const startSDKHere = () => {
     sdk.Camera.rotate(100, 0);
-  }
-  
+    console.log(sdk.Scene);
+    //addDemoObject();
+  };
+
+  const addDemoObject = async () => {
+    var [sceneObject] = await sdk.Scene.createObjects(1);
+    var node = sceneObject.addNode();
+    var initial = {
+      url: "https://cadthai.com/Content/xrmatterport/model/heavyrobot_ani.glb",
+      visible: true,
+      localScale: {
+        x: 0.5,
+        y: 0.5,
+        z: 0.5,
+      },
+      localPosition: {
+        x: 0.1,
+        y: 0,
+        z: 0,
+      },
+    };
+
+    node.addComponent("mp.gltfLoader", initial);
+    node.start();
+  };
 
   const rotate = () => {
     sdk?.Camera.rotate(horizontal, vertical);
   };
 
   async function loaded() {
-   
     await sdk?.App.state.waitUntil(
       (state) => state.phase === sdk.App.Phase.PLAYING
     );
