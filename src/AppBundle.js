@@ -1,12 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
+import { boxFactoryType, makeBoxFactory } from "./scene-components/SimpleBox";
 
 function App() {
   const [sdk, setSdk] = useState();
   const [horizontal, setHorizontal] = useState(45);
-  const [vertical, setVertical] = useState(15);
+  const [vertical, setVertical] = useState(0);
   const container = useRef();
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const [componentBoxFactory, setComponentBoxFactory] = useState();
+  const [nodeBoxFactory, setNodeBoxFactory] = useState();
+  const [positionBoxFactory,setPositionBoxFactory] = useState("x=0" +", y=0" + ",z=0");
+  
 
   const showCaseLoaded = async () => {
     const showcase = document.getElementById("showcase");
@@ -50,12 +56,16 @@ function App() {
   useEffect(() => {
     //After finished load
     if (isLoaded === true) {
-      loadAllModel();
+      initialFunction();
       startSDKHere();
     }
   }, [isLoaded]);
 
-  const loadAllModel = async () => {
+  const registerCustomComponent = async () => {
+    sdk.Scene.register(boxFactoryType, makeBoxFactory);
+  };
+
+  const initialFunction = async () => {
     const [sceneObject] = await sdk.Scene.createObjects(1);
     const lightsNode = sceneObject.addNode();
     const directionalLightComponet = lightsNode.addComponent(
@@ -74,7 +84,11 @@ function App() {
       "ambientIntensity"
     );
     lightsNode.start();
+
+    registerCustomComponent();
+
     addComponentNode1();
+    addComponentNode3();
   };
 
   //Start code inthis function
@@ -82,6 +96,82 @@ function App() {
     //sdk.Camera.rotate(100, 0);
     //console.log(sdk.Scene);
     //addDemoObject();
+  };
+
+  const setPositionStateBoxFactory=(newx,newy,newz)=>{
+    nodeBoxFactory.position.set(newx,newy,newz);
+    setPositionBoxFactory("x="+newx +", y="+newy+" , z="+newz);
+  }
+
+  const setColorBoxFactoryMat=(r,g,b)=>{
+    componentBoxFactory.material.color.setRGB(r,g,b);
+  }
+
+
+const customEvent =()=>{
+    console.log('clicked');
+}
+
+  const addComponentNode3 = async () => {
+    var [sceneObject] = await sdk.Scene.createObjects(1);
+    var node3 = sceneObject.addNode("node-obj-3");
+    var initial = {
+      //url: "https://static.matterport.com/showcase-sdk/examples/assets-1.0-2-g6b74572/assets/models/sofa/9/scene.gltf",
+      visible: true,
+      size: { x: 0.6, y: 0.6, z: 0.6 },
+      localScale: {
+        x: 1,
+        y: 1,
+        z: 1,
+      },
+      localPosition: {
+        x: -1,
+        y: -7.5,
+        z: 2.25,
+      },
+      localRotation: {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+     
+      /*  position: { x: -1, y: -7.5, z: 2.25 }, */
+    };
+
+    const gltfrtv = node3.addComponent(
+      boxFactoryType,
+      initial,
+      "my-component-3"
+    );
+
+    class ClickSpy {
+      node = node3;
+      component = gltfrtv;
+      eventType = "INTERACTION.CLICK";
+      onEvent(payload) {
+        console.log("received node3", payload, this);
+        this.component.material.color.setRGB(1,1,1);
+        //setColorBoxFactoryMat(1,1,1)
+        /* this.node.stop();
+        addComponentNode2(); */
+      }
+    }
+    node3.position.set(-1, -7.5, 2.25);
+    // Spy on the click event
+    //inputComponent.spyOnEvent(new ClickSpy());
+    console.log(node3);
+    //gltfrtv?.outputs.objectRoot.position.set(0,-7,0);
+    gltfrtv?.spyOnEvent(new ClickSpy());
+
+    setComponentBoxFactory(gltfrtv);
+    node3.start();
+    setNodeBoxFactory(node3);
+    console.log(gltfrtv);
+    // You can enable navigation after starting the node.
+    //inputComponent.inputs.userNavigationEnabled = true;
+    //console.log(node);
+    // You can turn off all events and the spy wont receive any callbacks.
+    //inputComponent.inputs.eventsEnabled = false;
   };
 
   const addComponentNode1 = async () => {
@@ -127,6 +217,7 @@ function App() {
 
     gltfrtv?.spyOnEvent(new ClickSpy());
     node1.start();
+    console.log(gltfrtv);
     // You can enable navigation after starting the node.
     //inputComponent.inputs.userNavigationEnabled = true;
     //console.log(node);
@@ -192,19 +283,7 @@ function App() {
   return (
     <div className="app">
       {/* <div className="container" ref={container}></div> */}
-      <iframe
-        id="showcase"
-        src="/bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=w78qr7ncg7npmnhwu1xi07yza"
-        width="1200px"
-        height="800px"
-        frameBorder="0"
-        allow="xr-spatial-tracking"
-        allowFullScreen
-        ref={container}
-        onLoad={showCaseLoaded}
-      >
-        {" "}
-      </iframe>
+
       <div className="button-wrap">
         <label>
           <span>Horizontal rotation</span>
@@ -223,7 +302,56 @@ function App() {
           />
         </label>
         <button onClick={rotate /* startSDKHere */}>Rotate</button>
+        <br></br>
+        <button onClick={() => setColorBoxFactoryMat(1,0.1,0.1)}>
+          Change color Red
+        </button>
+        <button onClick={() => setColorBoxFactoryMat(0.1,1,0.1)}>
+          Change color Green
+        </button>
+        <br></br>
+        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x-0.1,nodeBoxFactory.position.y,nodeBoxFactory.position.z))}>
+          Move box x-0.1
+        </button>
+        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x+0.1,nodeBoxFactory.position.y,nodeBoxFactory.position.z))}>
+          Move box x+0.1
+        </button>
+        <br></br>
+        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x,nodeBoxFactory.position.y-0.1,nodeBoxFactory.position.z))}>
+          Move box y-0.1
+        </button>
+        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x,nodeBoxFactory.position.y+0.1,nodeBoxFactory.position.z))}>
+          Move box y+0.1
+        </button>
+        <br></br>
+        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x,nodeBoxFactory.position.y,nodeBoxFactory.position.z-0.1))}>
+          Move box z-0.1
+        </button>
+        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x,nodeBoxFactory.position.y,nodeBoxFactory.position.z+0.1))}>
+          Move box z+0.1
+        </button>
+        <br></br>
+       {positionBoxFactory}
+       {/*  <button onClick={() => (alert(nodeBoxFactory.position.x +"," +nodeBoxFactory.position.y+"," +nodeBoxFactory.position.z  ))}>
+          Get Location
+        </button> */}
+        
+        {/* <button onClick={()=>(nodeBox.start())}>Start Node</button>
+        <button onClick={()=>(nodeBox.stop())}>Stop Node</button> */}
       </div>
+      <iframe
+        id="showcase"
+        src="/bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=w78qr7ncg7npmnhwu1xi07yza"
+        width="1200px"
+        height="800px"
+        frameBorder="0"
+        allow="xr-spatial-tracking"
+        allowFullScreen
+        ref={container}
+        onLoad={showCaseLoaded}
+      >
+        {" "}
+      </iframe>
     </div>
   );
 }
