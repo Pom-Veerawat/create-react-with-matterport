@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import { boxFactoryType, makeBoxFactory } from "./scene-components/SimpleBox";
+import { iotBoxType, makeIotBox } from "./scene-components/IotBox";
+import Iframe from "./UI/Iframe";
 
 function App() {
   const [sdk, setSdk] = useState();
@@ -11,8 +13,13 @@ function App() {
 
   const [componentBoxFactory, setComponentBoxFactory] = useState();
   const [nodeBoxFactory, setNodeBoxFactory] = useState();
-  const [positionBoxFactory,setPositionBoxFactory] = useState("x=0" +", y=0" + ",z=0");
-  
+  const [positionBoxFactory, setPositionBoxFactory] = useState(
+    "x=0" + ", y=0" + ",z=0"
+  );
+
+  const [componentIotBox, setComponentIotBox] = useState();
+
+  const [iframe, setIframe] = useState();
 
   const showCaseLoaded = async () => {
     const showcase = document.getElementById("showcase");
@@ -63,6 +70,7 @@ function App() {
 
   const registerCustomComponent = async () => {
     sdk.Scene.register(boxFactoryType, makeBoxFactory);
+    sdk.Scene.register(iotBoxType, makeIotBox);
   };
 
   const initialFunction = async () => {
@@ -89,6 +97,7 @@ function App() {
 
     addComponentNode1();
     addComponentNode3();
+    addComponentNode4();
   };
 
   //Start code inthis function
@@ -97,20 +106,93 @@ function App() {
     //console.log(sdk.Scene);
     //addDemoObject();
   };
+  const iframeHandler = () => {
+    setIframe(null);
+  };
+  const setPositionStateBoxFactory = (newx, newy, newz) => {
+    nodeBoxFactory.position.set(newx, newy, newz);
+    setPositionBoxFactory("x=" + newx + ", y=" + newy + " , z=" + newz);
+  };
 
-  const setPositionStateBoxFactory=(newx,newy,newz)=>{
-    nodeBoxFactory.position.set(newx,newy,newz);
-    setPositionBoxFactory("x="+newx +", y="+newy+" , z="+newz);
-  }
+  const setColorBoxFactoryMat = (r, g, b) => {
+    componentBoxFactory.material.color.setRGB(r, g, b);
+  };
 
-  const setColorBoxFactoryMat=(r,g,b)=>{
-    componentBoxFactory.material.color.setRGB(r,g,b);
-  }
+  const setColorIotMat = (r, g, b) => {
+    componentIotBox.material.color.setRGB(r, g, b);
+  };
 
+  const customEvent = (msg) => {
+    console.log("clicked");
+    alert( msg);
+  };
 
-const customEvent =()=>{
-    console.log('clicked');
-}
+  const addComponentNode4 = async () => {
+    var [sceneObject] = await sdk.Scene.createObjects(1);
+    var node4 = sceneObject.addNode("node-obj-4");
+    var initial = {
+      //url: "https://static.matterport.com/showcase-sdk/examples/assets-1.0-2-g6b74572/assets/models/sofa/9/scene.gltf",
+      visible: true,
+      size: { x: 0.2, y: 32, z: 16 },
+      localScale: {
+        x: 1,
+        y: 1,
+        z: 1,
+      },
+      localPosition: {
+        x: -1,
+        y: -7.5,
+        z: 2.25,
+      },
+      localRotation: {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+      color: { r: 1, g: 0.5, b: 0 },
+      updateInterval: 3000,
+      updateApiUrl:
+        "https://pom-iot-default-rtdb.asia-southeast1.firebasedatabase.app/color.json",
+      /*  position: { x: -1, y: -7.5, z: 2.25 }, */
+    };
+
+    const gltfrtv = node4.addComponent(iotBoxType, initial, "my-component-4");
+
+    class ClickSpy {
+      node = node4;
+      component = gltfrtv;
+      eventType = "INTERACTION.CLICK";
+      onEvent(payload) {
+        console.log("received node4", payload, this);
+        console.log(this.component.outputs.objectRoot.scale);
+        //this.component.outputs.objectRoot.scale.set(2,2,2);
+        //this.component.material.color.setRGB(1,1,1);
+        customEvent(this.component.inputs.myUpdatedHexColor);
+        //alert( this.component.inputs.myUpdatedHexColor);
+        //alert('clciked!');
+        //setColorBoxFactoryMat(1,1,1)
+        /* this.node.stop();
+        addComponentNode2(); */
+      }
+    }
+    node4.position.set(-0.8, -9, 2.25);
+    //gltfrtv.material.color.setRGB(1, 0.5, 0);
+    // Spy on the click event
+    //inputComponent.spyOnEvent(new ClickSpy());
+    //console.log(node3);
+    //gltfrtv?.outputs.objectRoot.position.set(0,-7,0);
+    gltfrtv?.spyOnEvent(new ClickSpy());
+
+    setComponentIotBox(gltfrtv);
+    node4.start();
+    //setNodeBoxFactory(node3);
+    //console.log(gltfrtv);
+    // You can enable navigation after starting the node.
+    //inputComponent.inputs.userNavigationEnabled = true;
+    //console.log(node);
+    // You can turn off all events and the spy wont receive any callbacks.
+    //inputComponent.inputs.eventsEnabled = false;
+  };
 
   const addComponentNode3 = async () => {
     var [sceneObject] = await sdk.Scene.createObjects(1);
@@ -134,7 +216,7 @@ const customEvent =()=>{
         y: 0,
         z: 0,
       },
-     
+
       /*  position: { x: -1, y: -7.5, z: 2.25 }, */
     };
 
@@ -150,7 +232,21 @@ const customEvent =()=>{
       eventType = "INTERACTION.CLICK";
       onEvent(payload) {
         console.log("received node3", payload, this);
-        this.component.material.color.setRGB(1,1,1);
+        console.log(this.component.material.color);
+        if (
+          this.component.material.color.r === 1 &&
+          this.component.material.color.g === 1 &&
+          this.component.material.color.b === 1
+        ) {
+          this.component.material.color.setRGB(1, 1, 0);
+        } else {
+          this.component.material.color.setRGB(1, 1, 1);
+        }
+        setIframe({
+            title: "Watch Realtime IOT No. #44s572",
+            message: "https://static.matterport.com/showcase-sdk/examples/vs-app-1.1.6-12-g0a66341/vs-app/index.html?applicationKey=08s53auxt9txz1w6hx2iww1qb&m=89SActNChJm&sr=-3.09,-1.18&ss=38",
+          });
+        //alert("clicked!");
         //setColorBoxFactoryMat(1,1,1)
         /* this.node.stop();
         addComponentNode2(); */
@@ -303,42 +399,97 @@ const customEvent =()=>{
         </label>
         <button onClick={rotate /* startSDKHere */}>Rotate</button>
         <br></br>
-        <button onClick={() => setColorBoxFactoryMat(1,0.1,0.1)}>
+        <button onClick={() => setColorBoxFactoryMat(1, 0.1, 0.1)}>
           Change color Red
         </button>
-        <button onClick={() => setColorBoxFactoryMat(0.1,1,0.1)}>
+        <button onClick={() => setColorBoxFactoryMat(0.1, 1, 0.1)}>
           Change color Green
         </button>
         <br></br>
-        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x-0.1,nodeBoxFactory.position.y,nodeBoxFactory.position.z))}>
+        <button
+          onClick={() =>
+            setPositionStateBoxFactory(
+              nodeBoxFactory.position.x - 0.1,
+              nodeBoxFactory.position.y,
+              nodeBoxFactory.position.z
+            )
+          }
+        >
           Move box x-0.1
         </button>
-        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x+0.1,nodeBoxFactory.position.y,nodeBoxFactory.position.z))}>
+        <button
+          onClick={() =>
+            setPositionStateBoxFactory(
+              nodeBoxFactory.position.x + 0.1,
+              nodeBoxFactory.position.y,
+              nodeBoxFactory.position.z
+            )
+          }
+        >
           Move box x+0.1
         </button>
         <br></br>
-        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x,nodeBoxFactory.position.y-0.1,nodeBoxFactory.position.z))}>
+        <button
+          onClick={() =>
+            setPositionStateBoxFactory(
+              nodeBoxFactory.position.x,
+              nodeBoxFactory.position.y - 0.1,
+              nodeBoxFactory.position.z
+            )
+          }
+        >
           Move box y-0.1
         </button>
-        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x,nodeBoxFactory.position.y+0.1,nodeBoxFactory.position.z))}>
+        <button
+          onClick={() =>
+            setPositionStateBoxFactory(
+              nodeBoxFactory.position.x,
+              nodeBoxFactory.position.y + 0.1,
+              nodeBoxFactory.position.z
+            )
+          }
+        >
           Move box y+0.1
         </button>
         <br></br>
-        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x,nodeBoxFactory.position.y,nodeBoxFactory.position.z-0.1))}>
+        <button
+          onClick={() =>
+            setPositionStateBoxFactory(
+              nodeBoxFactory.position.x,
+              nodeBoxFactory.position.y,
+              nodeBoxFactory.position.z - 0.1
+            )
+          }
+        >
           Move box z-0.1
         </button>
-        <button onClick={() => (setPositionStateBoxFactory(nodeBoxFactory.position.x,nodeBoxFactory.position.y,nodeBoxFactory.position.z+0.1))}>
+        <button
+          onClick={() =>
+            setPositionStateBoxFactory(
+              nodeBoxFactory.position.x,
+              nodeBoxFactory.position.y,
+              nodeBoxFactory.position.z + 0.1
+            )
+          }
+        >
           Move box z+0.1
         </button>
         <br></br>
-       {positionBoxFactory}
-       {/*  <button onClick={() => (alert(nodeBoxFactory.position.x +"," +nodeBoxFactory.position.y+"," +nodeBoxFactory.position.z  ))}>
+        {positionBoxFactory}
+        {/*  <button onClick={() => (alert(nodeBoxFactory.position.x +"," +nodeBoxFactory.position.y+"," +nodeBoxFactory.position.z  ))}>
           Get Location
         </button> */}
-        
+
         {/* <button onClick={()=>(nodeBox.start())}>Start Node</button>
         <button onClick={()=>(nodeBox.stop())}>Stop Node</button> */}
       </div>
+      {iframe && (
+        <Iframe
+          title={iframe.title}
+          message={iframe.message}
+          onConfirm={iframeHandler}
+        />
+      )}
       <iframe
         id="showcase"
         src="/bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=w78qr7ncg7npmnhwu1xi07yza"
