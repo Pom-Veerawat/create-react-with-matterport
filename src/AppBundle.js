@@ -3,6 +3,7 @@ import "./App.css";
 import { boxFactoryType, makeBoxFactory } from "./scene-components/SimpleBox";
 import { iotBoxType, makeIotBox } from "./scene-components/IotBox";
 import Iframe from "./UI/Iframe";
+import { isElement } from "react-dom/test-utils";
 
 function App() {
   const [sdk, setSdk] = useState();
@@ -11,6 +12,8 @@ function App() {
   const container = useRef();
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const [matterTag1, setMatterTag1] = useState([]);
+  const [matterTag2, setMatterTag2] = useState("");
   const [componentBoxFactory, setComponentBoxFactory] = useState();
   const [nodeBoxFactory, setNodeBoxFactory] = useState();
   const [positionBoxFactory, setPositionBoxFactory] = useState(
@@ -59,14 +62,48 @@ function App() {
       (state) => state.phase === sdk.App.Phase.PLAYING
     );
   }
+  const editMatterTag = () => {
+    /* console.log(matterTag1);
+    console.log(matterTag2); */
 
+    fetch(
+      "https://pom-iot-default-rtdb.asia-southeast1.firebasedatabase.app/aircon.json"
+    )
+      .then((response) => {
+        //console.log(response.json());
+        return response.json();
+      })
+      .then((data) => {
+        console.log(matterTag1);
+
+        //console.log(matterTag2);
+        sdk.Mattertag.editBillboard(matterTag1, {
+          description:
+            "[Link to Mattertag SDK!](https://matterport.github.io/showcase-sdk/sdk_editing_mattertags.html) \r\n\r\n ! Air Con = " +
+            data.temp + " !"+
+            "\r\n\r\n" +"\r\n\r\n"+
+            "click button to reset to 25c",
+        });
+      });
+  };
   useEffect(() => {
     //After finished load
+
     if (isLoaded === true) {
       initialFunction();
       startSDKHere();
     }
   }, [isLoaded]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isLoaded) {
+        //timer do something
+        editMatterTag();
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [matterTag1, matterTag2]);
 
   const registerCustomComponent = async () => {
     sdk.Scene.register(boxFactoryType, makeBoxFactory);
@@ -98,6 +135,7 @@ function App() {
     addComponentNode1();
     addComponentNode3();
     addComponentNode4();
+    addMattertagNode1();
   };
 
   //Start code inthis function
@@ -124,7 +162,59 @@ function App() {
 
   const customEvent = (msg) => {
     console.log("clicked");
-    alert( msg);
+    alert("สถานะปัจจุบัน" + msg);
+  };
+
+  const addMattertagNode1 = () => {
+    var mattertagDesc = {
+      label: "Hello custom Mattertag",
+      description: "0 c",
+      anchorPosition: { x: -1, y: -6.9, z: 3.05 },
+      stemVector: { x: 0, y: -0.5, z: 0 },
+    };
+    //setMatterTag2("test");
+    sdk.Mattertag.add(mattertagDesc).then(function (mattertagId) {
+      //console.log(mattertagId);
+      setMatterTag1(mattertagId[0]);
+
+      var htmlToInject =
+        ' \
+<style> \
+button { \
+width: 260px; \
+height: 50px; \
+} \
+</style> \
+<button id="btn1">Reset temperature to 25c</button> \
+<script> \
+var btn1 = document.getElementById("btn1"); \
+btn1.addEventListener("click", function () { \
+window.send("buttonClick", 12345); \
+}); \
+</script>';
+      sdk.Mattertag.injectHTML(mattertagId[0], htmlToInject, {
+        size: {
+          w: 300,
+          h: 200,
+        },
+      }).then(function (messenger) {
+        messenger.on("buttonClick", function (buttonId) {
+          alert("Rest temperature to 25c");
+          console.log("clicked button with id:", buttonId);
+          fetch(
+            "https://pom-iot-default-rtdb.asia-southeast1.firebasedatabase.app/aircon.json",
+            {
+              method: "PUT",
+              body: JSON.stringify({
+                temp: "25c",
+              }),
+            }
+          );
+        });
+      });
+      //console.log(mattertagId);
+      // output: TODO
+    });
   };
 
   const addComponentNode4 = async () => {
@@ -243,9 +333,10 @@ function App() {
           this.component.material.color.setRGB(1, 1, 1);
         }
         setIframe({
-            title: "Watch Realtime IOT No. #44s572",
-            message: "https://static.matterport.com/showcase-sdk/examples/vs-app-1.1.6-12-g0a66341/vs-app/index.html?applicationKey=08s53auxt9txz1w6hx2iww1qb&m=89SActNChJm&sr=-3.09,-1.18&ss=38",
-          });
+          title: "Watch Realtime IOT No. #44s572",
+          message:
+            "https://static.matterport.com/showcase-sdk/examples/vs-app-1.1.6-12-g0a66341/vs-app/index.html?applicationKey=08s53auxt9txz1w6hx2iww1qb&m=89SActNChJm&sr=-3.09,-1.18&ss=38",
+        });
         //alert("clicked!");
         //setColorBoxFactoryMat(1,1,1)
         /* this.node.stop();
@@ -282,7 +373,7 @@ function App() {
         z: 1,
       },
       localPosition: {
-        x: -1.5,
+        x: -1.1,
         y: -9,
         z: 2,
       },
