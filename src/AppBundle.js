@@ -79,9 +79,11 @@ function App() {
         //console.log(matterTag2);
         sdk.Mattertag.editBillboard(matterTag1, {
           description:
-            "[Link to Mattertag SDK!](https://matterport.github.io/showcase-sdk/sdk_editing_mattertags.html) \r\n\r\n ! Air Con = " +
-            data.temp + " !"+
-            "\r\n\r\n" +"\r\n\r\n"+
+            "[Link to Mattertag SDK!](https://matterport.github.io/showcase-sdk/sdk_editing_mattertags.html) \r\n [Link to api doc](https://matterport.github.io/showcase-sdk/docs/reference/current/index.html)\r\n ! Air Con = " +
+            data.temp +
+            " !" +
+            "\r\n\r\n" +
+            "\r\n\r\n" +
             "click button to reset to 25c",
         });
       });
@@ -136,6 +138,7 @@ function App() {
     addComponentNode3();
     addComponentNode4();
     addMattertagNode1();
+    addMattertagNode2();
   };
 
   //Start code inthis function
@@ -210,6 +213,59 @@ window.send("buttonClick", 12345); \
               }),
             }
           );
+        });
+      });
+      //console.log(mattertagId);
+      // output: TODO
+    });
+  };
+  const addMattertagNode2 = () => {
+    var mattertagDesc = {
+      label: "ตารางซ่อมบำรุง",
+      description: "ตารางซ่อมบำรุงสำหรับ item xyyx001",
+      anchorPosition: { x: -1, y: -6.9, z: 3.55 },
+      stemVector: { x: 0, y: -0.5, z: 0 },
+    };
+    //setMatterTag2("test");
+    sdk.Mattertag.add(mattertagDesc).then(function (mattertagId) {
+      //console.log(mattertagId);
+      setMatterTag2(mattertagId[0]);
+
+      var htmlToInject =
+        ' \
+<style> \
+button { \
+width: 260px; \
+height: 50px; \
+} \
+</style> \
+<iframe src="https://www.cadthai.com/Modelsobj/Details?modelid=FMID00002891" height="300" width="400" title="Iframe Example"></iframe> \
+<button id="btn2">Go to Dashboard</button> \
+<script> \
+var btn2 = document.getElementById("btn2"); \
+btn2.addEventListener("click", function () { \
+window.send("buttonClick2", 123456); \
+}); \
+</script>';
+      sdk.Mattertag.injectHTML(mattertagId[0], htmlToInject, {
+        size: {
+          w: 400,
+          h: 300,
+        },
+      }).then(function (messenger) {
+        messenger.on("buttonClick2", function (buttonId) {
+          alert("msg2");
+          /* alert("Rest temperature to 25c");
+          console.log("clicked button with id:", buttonId);
+          fetch(
+            "https://pom-iot-default-rtdb.asia-southeast1.firebasedatabase.app/aircon.json",
+            {
+              method: "PUT",
+              body: JSON.stringify({
+                temp: "25c",
+              }),
+            }
+          ); */
         });
       });
       //console.log(mattertagId);
@@ -583,7 +639,7 @@ window.send("buttonClick", 12345); \
       )}
       <iframe
         id="showcase"
-        src="/bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=w78qr7ncg7npmnhwu1xi07yza"
+        src="./bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=w78qr7ncg7npmnhwu1xi07yza"
         width="1200px"
         height="800px"
         frameBorder="0"

@@ -1,4 +1,5 @@
 {
+  "homepage": ".",
   "name": "create-react-with-matterport",
   "version": "0.1.0",
   "private": true,
