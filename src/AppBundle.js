@@ -15,6 +15,7 @@ function App() {
   const [matterTag1, setMatterTag1] = useState([]);
   const [matterTag2, setMatterTag2] = useState("");
   const [componentBoxFactory, setComponentBoxFactory] = useState();
+  const [componentRobot, setComponentRobot] = useState();
   const [nodeBoxFactory, setNodeBoxFactory] = useState();
   const [positionBoxFactory, setPositionBoxFactory] = useState(
     "x=0" + ", y=0" + ",z=0"
@@ -137,6 +138,7 @@ function App() {
     addComponentNode1();
     addComponentNode3();
     addComponentNode4();
+    
     addMattertagNode1();
     addMattertagNode2();
   };
@@ -417,11 +419,65 @@ window.send("buttonClick2", 123456); \
     //inputComponent.inputs.eventsEnabled = false;
   };
 
+  const addComponentNodeGLBAnimate = async () => {
+    var [sceneObject] = await sdk.Scene.createObjects(1);
+    var NodeGLBAnimate = sceneObject.addNode("node-obj-3");
+    var initial = {
+      //url: "https://static.matterport.com/showcase-sdk/examples/assets-1.0-2-g6b74572/assets/models/sofa/9/scene.gltf",
+      url: "https://cadthai.com/Content/MAAS/gltf/character_animated.glb",
+      visible: true,
+      localScale: {
+        x: 1,
+        y: 1,
+        z: 1,
+      },
+      localPosition: {
+        x: 0,
+        y: -10,
+        z: 3.5,
+      },
+      localRotation: {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+    };
+
+    const gltfrtv = NodeGLBAnimate.addComponent(
+      "mp.gltfLoader",
+      initial,
+      "my-component-gltf-2"
+    );
+
+    class ClickSpy {
+      node = NodeGLBAnimate;
+      eventType = "INTERACTION.CLICK";
+      onEvent(payload) {
+        console.log("received node1", payload, this);
+        /* this.node.stop();
+        addComponentNode2(); */
+      }
+    }
+    // Spy on the click event
+    //inputComponent.spyOnEvent(new ClickSpy());
+
+    gltfrtv?.spyOnEvent(new ClickSpy());
+    NodeGLBAnimate.start();
+    setComponentRobot(NodeGLBAnimate);
+    console.log(gltfrtv);
+    // You can enable navigation after starting the node.
+    //inputComponent.inputs.userNavigationEnabled = true;
+    //console.log(node);
+    // You can turn off all events and the spy wont receive any callbacks.
+    //inputComponent.inputs.eventsEnabled = false;
+  };
+
   const addComponentNode1 = async () => {
     var [sceneObject] = await sdk.Scene.createObjects(1);
     var node1 = sceneObject.addNode("node-obj-1");
     var initial = {
-      url: "https://static.matterport.com/showcase-sdk/examples/assets-1.0-2-g6b74572/assets/models/sofa/9/scene.gltf",
+      //url: "https://static.matterport.com/showcase-sdk/examples/assets-1.0-2-g6b74572/assets/models/sofa/9/scene.gltf",
+      url: "https://cadthai.com/Content/MAAS/gltf/sofa.gltf",
       visible: true,
       localScale: {
         x: 1,
@@ -472,7 +528,8 @@ window.send("buttonClick2", 123456); \
     var [sceneObject] = await sdk.Scene.createObjects(1);
     var node2 = sceneObject.addNode("node-obj-1");
     var initial = {
-      url: "https://static.matterport.com/showcase-sdk/examples/assets-1.0-2-g6b74572/assets/models/iot/nest-1/model.dae",
+      //url: "https://static.matterport.com/showcase-sdk/examples/assets-1.0-2-g6b74572/assets/models/iot/nest-1/model.dae",
+      url: "https://cadthai.com/Content/MAAS/gltf/iot.dae",
       visible: true,
       localScale: {
         x: 0.5,
@@ -623,6 +680,28 @@ window.send("buttonClick2", 123456); \
         </button>
         <br></br>
         {positionBoxFactory}
+        <br></br>
+        <button
+          onClick={() =>
+            addComponentNodeGLBAnimate()
+          }
+        >
+          *add robot*
+        </button>
+        <button
+          onClick={() =>
+            componentRobot.stop()
+          }
+        >
+          *delete robot*
+        </button>
+        <button
+          onClick={() =>
+            alert('futre feature')
+          }
+        >
+          *play robot*
+        </button>
         {/*  <button onClick={() => (alert(nodeBoxFactory.position.x +"," +nodeBoxFactory.position.y+"," +nodeBoxFactory.position.z  ))}>
           Get Location
         </button> */}
@@ -639,7 +718,8 @@ window.send("buttonClick2", 123456); \
       )}
       <iframe
         id="showcase"
-        src="./bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=w78qr7ncg7npmnhwu1xi07yza"
+        //src="./bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=w78qr7ncg7npmnhwu1xi07yza"
+        src="./bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=x1pa124pp38sxs85k46kmbuha"
         width="1200px"
         height="800px"
         frameBorder="0"
