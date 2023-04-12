@@ -20,6 +20,9 @@ function App() {
   const [positionBoxFactory, setPositionBoxFactory] = useState(
     "x=0" + ", y=0" + ",z=0"
   );
+  const [positionPointer, setPositionPointer] = useState(
+    "x=0" + ", y=0" + ",z=0"
+  );
 
   const [componentIotBox, setComponentIotBox] = useState();
 
@@ -27,7 +30,7 @@ function App() {
 
   const showCaseLoaded = async () => {
     const showcase = document.getElementById("showcase");
-    const key = "w78qr7ncg7npmnhwu1xi07yza";
+    const key = "x1pa124pp38sxs85k46kmbuha";
     try {
       const rtvSDK = await showcase.contentWindow.MP_SDK.connect(
         showcase,
@@ -107,6 +110,13 @@ function App() {
     }, 2000);
     return () => clearInterval(interval);
   }, [matterTag1, matterTag2]);
+  function pointToString(point) {
+    var x = point.x.toFixed(3);
+    var y = point.y.toFixed(3);
+    var z = point.z.toFixed(3);
+
+    return `{ x: ${x}, y: ${y}, z: ${z} }`;
+  }
 
   const registerCustomComponent = async () => {
     sdk.Scene.register(boxFactoryType, makeBoxFactory);
@@ -138,9 +148,22 @@ function App() {
     addComponentNode1();
     addComponentNode3();
     addComponentNode4();
-    
+
     addMattertagNode1();
     addMattertagNode2();
+    addMattertagNode3();
+
+    //add pointer
+    sdk.Pointer.intersection.subscribe(function (intersection) {
+      console.log(intersection);
+      setPositionPointer(
+        "position = " +
+          pointToString(intersection.position) +
+          " normal = " +
+          pointToString(intersection.normal) +
+          " floorId = " + intersection.floorId
+      );
+    });
   };
 
   //Start code inthis function
@@ -241,7 +264,7 @@ width: 260px; \
 height: 50px; \
 } \
 </style> \
-<iframe src="https://www.cadthai.com/Modelsobj/Details?modelid=FMID00002891" height="300" width="400" title="Iframe Example"></iframe> \
+<iframe src="https://cadthai.com/Modelsobj/Details?modelid=FMID00002891" height="300" width="400" title="Iframe Example"></iframe> \
 <button id="btn2">Go to Dashboard</button> \
 <script> \
 var btn2 = document.getElementById("btn2"); \
@@ -249,10 +272,23 @@ btn2.addEventListener("click", function () { \
 window.send("buttonClick2", 123456); \
 }); \
 </script>';
+      var htmlToInject2 =
+        ' \
+\
+<iframe src="http://appz.myftp.org:3000/api/hassio_ingress/fCKbAFQTyuWnTeRV4Nymoc9my1yaH63Y3wIxWFqEP8Q/d/pq5JN9L4z/c?orgId=1&from=1681233228674&to=1681287506562&viewPanel=4" height="400" width="800" title="Iframe Example"></iframe> \
+<button id="btn2">Go to Dashboard</button> \
+<script> \
+var btn2 = document.getElementById("btn2"); \
+btn2.addEventListener("click", function () { \
+window.send("buttonClick2", 123456); \
+}); \
+</script>';
+
+      //http://appz.myftp.org:3000/api/hassio_ingress/fCKbAFQTyuWnTeRV4Nymoc9my1yaH63Y3wIxWFqEP8Q/d/pq5JN9L4z/c?orgId=1&from=1681233228674&to=1681287506562&viewPanel=4
       sdk.Mattertag.injectHTML(mattertagId[0], htmlToInject, {
         size: {
-          w: 400,
-          h: 300,
+          w: 800,
+          h: 400,
         },
       }).then(function (messenger) {
         messenger.on("buttonClick2", function (buttonId) {
@@ -273,6 +309,71 @@ window.send("buttonClick2", 123456); \
       //console.log(mattertagId);
       // output: TODO
     });
+  };
+
+  const addMattertagNode3 = () => {
+    //"mattertag.media.rich"
+    var mattertagDesc = {
+      label: "Hello Iframe C",
+      description:
+        "https://appz.myftp.org/d-solo/H3UlaCYVk/c?orgId=1&from=1681297720564&to=1681310146292&panelId=2",
+      anchorPosition: { x: -1, y: -6.9, z: 3.9 },
+      stemVector: { x: 0, y: -0.5, z: 0 },
+      /*  media: {
+        src: "http://appz.myftp.org:3000/api/hassio_ingress/fCKbAFQTyuWnTeRV4Nymoc9my1yaH63Y3wIxWFqEP8Q/d/pq5JN9L4z/c?orgId=1&from=1681233228674&to=1681287506562&viewPanel=2",
+        type: "mattertag.media.none",
+      }, */
+      color: { b: 1, g: 1, r: 1 },
+    };
+    //setMatterTag2("test");
+    console.log("sdk.Tag");
+    console.log(sdk.Tag);
+    // create a tag
+    const tagId = sdk.Tag.add({
+      label: "Test Tag",
+      anchorPosition: { x: -1, y: -6.9, z: 3.9 },
+      stemVector: { x: 0, y: -0.5, z: 0 },
+    }).then(function (tagId) {
+      console.log("tag id");
+      console.log(tagId);
+
+      var htmlToInject =
+        ' \
+<style> \
+button { \
+width: 260px; \
+height: 50px; \
+} \
+</style> \
+<iframe src="https://appz.myftp.org/d-solo/H3UlaCYVk/c?orgId=1&from=1681297720564&to=1681310146292&panelId=2" height="500" width="600" title="Iframe Example"></iframe> \
+<br></br> \
+<button id="btn2">Go to Dashboard</button> \
+<script> \
+var btn2 = document.getElementById("btn2"); \
+btn2.addEventListener("click", function () { \
+window.send("buttonClick2", 123456); \
+}); \
+</script>';
+      const sandboxId = sdk.Tag.registerSandbox(htmlToInject, {
+        size: {
+          w: 600,
+          h: 500,
+        },
+      }).then(function (sandboxId) {
+        console.log("sandboxId id");
+        console.log(sandboxId);
+        sdk.Tag.attach(tagId[0], sandboxId[0]);
+      });
+    });
+
+    /*  sdk.Mattertag.add(mattertagDesc).then(function (mattertagId) {
+
+       
+      //console.log(mattertagId);
+      //setMatterTag1(mattertagId[0]);
+      //console.log(mattertagId);
+      // output: TODO
+    }); */
   };
 
   const addComponentNode4 = async () => {
@@ -393,7 +494,8 @@ window.send("buttonClick2", 123456); \
         setIframe({
           title: "Watch Realtime IOT No. #44s572",
           message:
-            "https://static.matterport.com/showcase-sdk/examples/vs-app-1.1.6-12-g0a66341/vs-app/index.html?applicationKey=08s53auxt9txz1w6hx2iww1qb&m=89SActNChJm&sr=-3.09,-1.18&ss=38",
+            /* "https://static.matterport.com/showcase-sdk/examples/vs-app-1.1.6-12-g0a66341/vs-app/index.html?applicationKey=08s53auxt9txz1w6hx2iww1qb&m=89SActNChJm&sr=-3.09,-1.18&ss=38", */
+            "https://appz.myftp.org/d-solo/H3UlaCYVk/c?orgId=1&from=1681297720564&to=1681310146292&panelId=2",
         });
         //alert("clicked!");
         //setColorBoxFactoryMat(1,1,1)
@@ -681,31 +783,16 @@ window.send("buttonClick2", 123456); \
         <br></br>
         {positionBoxFactory}
         <br></br>
-        <button
-          onClick={() =>
-            addComponentNodeGLBAnimate()
-          }
-        >
+        <button onClick={() => addComponentNodeGLBAnimate()}>
           *add robot*
         </button>
-        <button
-          onClick={() =>
-            componentRobot.stop()
-          }
-        >
-          *delete robot*
-        </button>
-        <button
-          onClick={() =>
-            alert('futre feature')
-          }
-        >
-          *play robot*
-        </button>
+        <button onClick={() => componentRobot.stop()}>*delete robot*</button>
+        <button onClick={() => alert("futre feature")}>*play robot*</button>
+        <br></br>
+        **Hover mouse for show position {positionPointer}
         {/*  <button onClick={() => (alert(nodeBoxFactory.position.x +"," +nodeBoxFactory.position.y+"," +nodeBoxFactory.position.z  ))}>
           Get Location
         </button> */}
-
         {/* <button onClick={()=>(nodeBox.start())}>Start Node</button>
         <button onClick={()=>(nodeBox.stop())}>Stop Node</button> */}
       </div>
@@ -719,7 +806,7 @@ window.send("buttonClick2", 123456); \
       <iframe
         id="showcase"
         //src="./bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=w78qr7ncg7npmnhwu1xi07yza"
-        src="./bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=x1pa124pp38sxs85k46kmbuha"
+        src="./showcase-bundle/showcase.html?m=V5hx2ktRhvH&play=1&qs=1&log=0&applicationKey=x1pa124pp38sxs85k46kmbuha"
         width="1200px"
         height="800px"
         frameBorder="0"

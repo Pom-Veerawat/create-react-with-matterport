@@ -1,0 +1,58 @@
+<html>
+  <head>
+    <style>
+      body {
+        margin: 0;
+      }
+      #test-frame {
+        width: 100vw;
+        height: 100vh;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe id='test-frame' allow='fullscreen; xr-spatial-tracking'></iframe>
+  </body>
+  <script>
+    (async function () {
+      function buildPageUrl(pageVersion) {
+        return `${window.location.origin}/showcase-sdk/test/${pageVersion}/index.html?${decodeURIComponent(urlParams)}`;
+      }
+      const urlParams = new URLSearchParams(window.location.search);
+      const pageVersionOverride = urlParams.get('pageVersion');
+
+      const testFrame = document.getElementById('test-frame');
+      if (pageVersionOverride) {
+        testFrame.src = buildPageUrl(pageVersionOverride);
+        return;
+      }
+
+      const host = urlParams.get('apiHost') || urlParams.get('host');
+      const config = await fetch(host + '/api/v1/config/showcase');
+      const result = await config.json();
+      const sdkConfig = result.sdk;
+      const testPageVersion = sdkConfig.test;
+
+      try {
+        // if we have a fully qualified URL, use that...
+        new URL(testPageVersion);
+        testFrame.src = `${testPageVersion}?${decodeURIComponent(urlParams)}`;
+      } catch {
+        //if not, treat it as a version string instead
+        testFrame.src = buildPageUrl(testPageVersion);
+      }
+
+      Object.defineProperty(window, 'SDK_INSTANCE', {
+        get() {
+          try {
+            return testFrame.contentWindow.SDK_INSTANCE;
+          } catch {
+            console.error('SDK_INSTANCE is not accessible, likely due to X-frame restrictions');
+          }
+        },
+      });
+
+    })();
+  </script>
+</html>
